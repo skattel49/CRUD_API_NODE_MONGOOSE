@@ -10,6 +10,10 @@ const ItemSchema = new mongoose.Schema({
         type: Boolean,
         required: true,
         default: false
+    },
+    list: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'lists'
     }
 });
 
@@ -24,7 +28,10 @@ const ListSchema = new mongoose.Schema({
         required: true,
         default: false
     },
-    items: [ItemSchema]
+    user:{
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'users'
+    }
 });
 
 //unique did not work for me
@@ -39,7 +46,6 @@ const UserSchema = new mongoose.Schema({
         required: true,
         minlength: [8, "Password too short"]
     },
-    lists: [ListSchema]
 });
 
 UserSchema.pre('save', async function(req, res, next){
@@ -67,4 +73,8 @@ UserSchema.statics.login = async function ({username, password}){
     }
 }
 
-module.exports = User = mongoose.model('users', UserSchema);
+module.export = {
+    User: mongoose.model('users', UserSchema),
+    List: mongoose.model('lists', ListSchema),
+    Item: mongoose.model('items', ItemSchema),
+}

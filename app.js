@@ -4,7 +4,7 @@ const express = require('express');
 const cookieParser = require('cookie-parser');
 const cors = require('cors');
 const jwt = require('jsonwebtoken');
-const User = require('./models/users');
+const {User, Item, List} = require('./models/users');
 const createToken = require('./authentication/authentication');
 
 const app = express();
@@ -23,7 +23,7 @@ app.use(cookieParser());
 app.use(cors());
 app.use(express.json());
 //for all get requests check if they are authorized
-app.get('*', (req, res, next)=>{
+const authMiddleware = (req, res, next)=>{
     const token = req.cookies.jwt;
     if(token){
         jwt.verify(token, process.env.JWT_SECRET, (err, decodedToken)=>{
@@ -36,16 +36,16 @@ app.get('*', (req, res, next)=>{
         });
     }
     else{
-        res.end('No token');
+        res.end('Unauthorized Access');
     }
-});
-
-app.route('/').get((req, res)=>{
-    User.find(null).then((data)=>{
+};
+//default route
+app.route('/').all(authMiddleware).get((req, res)=>{
+    User.find().then((data)=>{
         res.json(data);
     });
 });
-
+//signup route
 app.route('/signup').post((req, res)=>{
     const username = req.body.username;
     //find a user if there is one in the database
@@ -67,7 +67,6 @@ app.route('/signup').post((req, res)=>{
 //login route
 app.route('/login').post((req, res)=>{
     User.login(req.body).then((data)=>{
-
         const token = createToken(data._id);
         res.cookie("jwt", token);
         res.json({token});
@@ -81,10 +80,74 @@ app.route('/login').post((req, res)=>{
 });
 
 //logout
-app.route('/logout').get((req, res)=>{
+app.route('/logout').all(authMiddleware).get((req, res)=>{
     console.log("Cleared cookie");
     res.cookie('jwt', '', {
         maxAge: 1
     })
     res.json({"token": null});
 });
+
+//CRUD TODO Lists
+app.route('/lists/:id?').all(authMiddleware)
+    .get((req, res)=>{
+        List.findOne({_id: id}).then((data)=>{
+            if(data == null){
+                res.json({"error": "List not found"});
+            }
+            res.json(data);
+        });
+    })
+    .post((req, res)=>{
+        const newLst = new List(req.body);
+        newLst.save().then((data)=>{
+            res.status(201).json(data);
+        }).catch((err)=>{
+            console.error(err);
+            res.json({err});
+        });
+    })
+    .patch((req, res)=>{
+        List.findOneAndUpdate({_id:req.body.id}, req.body, {new: true})
+        .then((data=>{
+            res.json(data);
+        }));
+    })
+    .delete((req, res)=>{
+        List.findOneAndDelete({_id: req.body.id})
+        .then((data)=>{
+            res.json(data);
+        });
+    });
+
+//CRUD TODO Items
+app.route('/items/:id?').all(authMiddleware)
+    .get((req, res)=>{
+        Item.findOne({_id: id}).then((data)=>{
+            if(data == null){
+                res.json({"error": "Item not found"});
+            }
+            res.json(data);
+        });
+    })
+    .post((req, res)=>{
+        const newItem = new Item(req.body);
+        newItem.save().then((data)=>{
+            res.status(201).json(data);
+        }).catch((err)=>{
+            console.error(err);
+            res.json({err});
+        });
+    })
+    .patch((req, res)=>{
+        Item.findOneAndUpdate({_id:req.body.id}, req.body, {new: true})
+        .then((data=>{
+            res.json(data);
+        }));
+    })
+    .delete((req, res)=>{
+        Item.findOneAndDelete({_id: req.body.id})
+        .then((data)=>{
+            res.json(data);
+        });
+    });

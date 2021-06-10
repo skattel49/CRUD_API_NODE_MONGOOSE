@@ -73,7 +73,7 @@ UserSchema.statics.login = async function ({username, password}){
     }
 }
 
-module.export = {
+module.exports = {
     User: mongoose.model('users', UserSchema),
     List: mongoose.model('lists', ListSchema),
     Item: mongoose.model('items', ItemSchema),

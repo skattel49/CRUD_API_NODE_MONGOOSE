@@ -17,11 +17,14 @@ mongoose.connect(process.env.MONGO_URI, {useUnifiedTopology: true, useNewUrlPars
     app.listen(port, ()=>{
         console.log(`Up and running on port ${port}`)
     });
+}).catch(err=>{
+    console.log(err);
 });
 
 app.use(cookieParser());
 app.use(cors());
 app.use(express.json());
+
 //for all get requests check if they are authorized
 const authMiddleware = (req, res, next)=>{
     const token = req.cookies.jwt;
@@ -43,7 +46,7 @@ const authMiddleware = (req, res, next)=>{
 app.route('/').all(authMiddleware).get((req, res)=>{
     User.find().then((data)=>{
         res.json(data);
-    });
+    }).catch((err)=>{console.log(err)});
 });
 //signup route
 app.route('/signup').post((req, res)=>{
@@ -61,7 +64,7 @@ app.route('/signup').post((req, res)=>{
                 res.json({token});
             });
         }
-    });
+    }).catch((err)=>{console.log(err)});
 });
 
 //login route
@@ -77,7 +80,7 @@ app.route('/login').post((req, res)=>{
         res.json({err});
 
     });
-});
+})
 
 //logout
 app.route('/logout').all(authMiddleware).get((req, res)=>{
@@ -96,7 +99,7 @@ app.route('/lists/:id?').all(authMiddleware)
                 res.json({"error": "List not found"});
             }
             res.json(data);
-        });
+        }).catch((err)=>{console.log(err)});
     })
     .post((req, res)=>{
         const newLst = new List(req.body);
@@ -111,13 +114,13 @@ app.route('/lists/:id?').all(authMiddleware)
         List.findOneAndUpdate({_id:req.body.id}, req.body, {new: true})
         .then((data=>{
             res.json(data);
-        }));
+        })).catch((err)=>{console.log(err)});
     })
     .delete((req, res)=>{
         List.findOneAndDelete({_id: req.body.id})
         .then((data)=>{
             res.json(data);
-        });
+        }).catch((err)=>{console.log(err)});
     });
 
 //CRUD TODO Items
@@ -128,7 +131,7 @@ app.route('/items/:id?').all(authMiddleware)
                 res.json({"error": "Item not found"});
             }
             res.json(data);
-        });
+        }).catch((err)=>{console.log(err)});
     })
     .post((req, res)=>{
         const newItem = new Item(req.body);
@@ -143,11 +146,11 @@ app.route('/items/:id?').all(authMiddleware)
         Item.findOneAndUpdate({_id:req.body.id}, req.body, {new: true})
         .then((data=>{
             res.json(data);
-        }));
+        })).catch((err)=>{console.log(err)});
     })
     .delete((req, res)=>{
         Item.findOneAndDelete({_id: req.body.id})
         .then((data)=>{
             res.json(data);
-        });
+        }).catch((err)=>{console.log(err)});
     });

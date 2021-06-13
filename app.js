@@ -93,16 +93,33 @@ app.route('/logout').all(authMiddleware).get((req, res)=>{
 //CRUD TODO Lists
 app.route('/lists/:id?').all(authMiddleware)
     .get((req, res)=>{
-        List.findOne({_id: id}).then((data)=>{
-            if(data == null){
-                res.json({"error": "List not found"});
-            }
-            res.json(data);
-        }).catch((err)=>{console.log(err)});
+        //if parameter is not specified send all lists
+        if(!req.params.id){
+            User.find({"username": req.body.username})
+            .populate("lists")
+            .then(data => {
+                res.json(data);
+            }).catch(err=>console.error(err));
+        }
+        else{
+            List.findOne({_id: id}).then((data)=>{
+                if(data == null){
+                    res.json({"error": "List not found"});
+                }
+                res.json(data);
+            }).catch((err)=>{console.log(err)});
+        }
     })
     .post((req, res)=>{
-        const newLst = new List(req.body);
+        const newLst = new List({
+            title: req.body.title
+        });
         newLst.save().then((data)=>{
+            /* after the creation of the list
+               update the user's array of lists
+            */
+            User.findOne({"username": req.body.username}).lists.push(data._id);
+            User.save(done);
             res.status(201).json(data);
         }).catch((err)=>{
             console.error(err);
@@ -125,16 +142,27 @@ app.route('/lists/:id?').all(authMiddleware)
 //CRUD TODO Items
 app.route('/items/:id?').all(authMiddleware)
     .get((req, res)=>{
-        Item.findOne({_id: id}).then((data)=>{
-            if(data == null){
-                res.json({"error": "Item not found"});
-            }
-            res.json(data);
-        }).catch((err)=>{console.log(err)});
+        if(!req.params.id){
+            List.findOne({_id: req.body.id})
+            .populate("items")
+            .then( data => {
+                res.json(data);
+            }).catch(err => console.error(err));
+        }
+        else{
+            Item.findOne({_id: id}).then((data)=>{
+                if(data == null){
+                    res.json({"error": "Item not found"});
+                }
+                res.json(data);
+            }).catch((err)=>{console.log(err)});
+        }
     })
     .post((req, res)=>{
-        const newItem = new Item(req.body);
+        const newItem = new Item({body: req.body.body});
         newItem.save().then((data)=>{
+            List.find({_id: req.body.id}).items.push(data._id);
+            List.save();
             res.status(201).json(data);
         }).catch((err)=>{
             console.error(err);

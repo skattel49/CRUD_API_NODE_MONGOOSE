@@ -1,5 +1,6 @@
 const mongoose = require('mongoose');
 const bcrypt = require('bcrypt');
+const { Schema } = require('mongoose');
 
 const ItemSchema = new mongoose.Schema({
     body:{
@@ -11,10 +12,6 @@ const ItemSchema = new mongoose.Schema({
         required: true,
         default: false
     },
-    list: {
-        type: mongoose.Schema.Types.ObjectId,
-        ref: 'lists'
-    }
 });
 
 
@@ -28,9 +25,9 @@ const ListSchema = new mongoose.Schema({
         required: true,
         default: false
     },
-    user:{
-        type: mongoose.Schema.Types.ObjectId,
-        ref: 'users'
+    items:{
+        type: [mongoose.Schema.Types.ObjectId],
+        ref: 'items'
     }
 });
 
@@ -46,6 +43,10 @@ const UserSchema = new mongoose.Schema({
         required: true,
         minlength: [8, "Password too short"]
     },
+    lists: {
+        type: [mongoose.Schema.Types.ObjectId],
+        ref: "lists"
+    }
 });
 
 UserSchema.pre('save', async function(req, res, next){

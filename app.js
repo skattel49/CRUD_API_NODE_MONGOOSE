@@ -69,16 +69,15 @@ app.route('/signup').post((req, res)=>{
 
 //login route
 app.route('/login').post((req, res)=>{
+    console.log("login route");
+    console.log(req.body);
     User.login(req.body).then((data)=>{
         const token = createToken(data._id);
         res.cookie("jwt", token);
         res.json({token});
-
     }).catch((err)=>{
-
         console.log(err);
-        res.json({err});
-
+        res.json({"err":"Invalid username/password"});
     });
 })
 

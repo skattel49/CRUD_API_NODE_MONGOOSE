@@ -93,21 +93,27 @@ app.route('/logout').all(authMiddleware).get((req, res)=>{
 //CRUD TODO Lists
 app.route('/lists/:id?').all(authMiddleware)
     .get((req, res)=>{
+        console.log("hi");
         //if parameter is not specified send all lists
         if(!req.params.id){
-            User.find({"username": req.body.username})
+            User.find({"username": req.query.username})
             .populate("lists")
             .then(data => {
+                console.log(data);
                 res.json(data);
             }).catch(err=>console.error(err));
         }
         else{
-            List.findOne({_id: id}).then((data)=>{
-                if(data == null){
+            List.findOne({_id: req.params.id}).then((data)=>{
+                if(!data){
                     res.json({"error": "List not found"});
                 }
                 res.json(data);
-            }).catch((err)=>{console.log(err)});
+            }).catch((err)=>{
+                console.log(err)
+                res.json(err);
+                console.log("haha");
+            });
         }
     })
     .post((req, res)=>{
@@ -118,8 +124,7 @@ app.route('/lists/:id?').all(authMiddleware)
             /* after the creation of the list
                update the user's array of lists
             */
-            User.findOne({"username": req.body.username}).lists.push(data._id);
-            User.save(done);
+            User.findOne({"username": req.body.username}).lists.push(data._id).save(done);
             res.status(201).json(data);
         }).catch((err)=>{
             console.error(err);
@@ -143,7 +148,7 @@ app.route('/lists/:id?').all(authMiddleware)
 app.route('/items/:id?').all(authMiddleware)
     .get((req, res)=>{
         if(!req.params.id){
-            List.findOne({_id: req.body.id})
+            List.findOne({_id: req.query.id})
             .populate("items")
             .then( data => {
                 res.json(data);

@@ -22,12 +22,16 @@ mongoose.connect(process.env.MONGO_URI, {useUnifiedTopology: true, useNewUrlPars
 });
 
 app.use(cookieParser());
-app.use(cors());
+app.use(cors({
+    "origin": "*",
+    //"origin": "http://localhost:2001",
+    credentials: true
+}));
 app.use(express.json());
 
 //for all get requests check if they are authorized
 const authMiddleware = (req, res, next)=>{
-    const token = req.cookies.jwt;
+    let token = req.headers.authorization.split(" ")[1];
     if(token){
         jwt.verify(token, process.env.JWT_SECRET, (err, decodedToken)=>{
             if(err){

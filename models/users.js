@@ -25,10 +25,10 @@ const ListSchema = new mongoose.Schema({
         required: true,
         default: false
     },
-    items:{
-        type: [mongoose.Schema.Types.ObjectId],
+    list_items:[{
+        type: mongoose.Schema.Types.ObjectId,
         ref: 'items'
-    }
+    }]
 });
 
 //unique did not work for me
@@ -43,10 +43,11 @@ const UserSchema = new mongoose.Schema({
         required: true,
         minlength: [8, "Password too short"]
     },
-    lists: {
-        type: [mongoose.Schema.Types.ObjectId],
-        ref: "lists"
-    }
+    user_lists: [{
+            type: mongoose.Schema.Types.ObjectId,
+            ref: "lists"
+        }
+    ]
 });
 
 UserSchema.pre('save', async function(req, res, next){

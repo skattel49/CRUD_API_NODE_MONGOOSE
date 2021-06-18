@@ -23,14 +23,14 @@ mongoose.connect(process.env.MONGO_URI, {useUnifiedTopology: true, useNewUrlPars
 
 app.use(cookieParser());
 app.use(cors({
-    "origin": "*",
-    //"origin": "http://localhost:2001",
+    "origin": "http://localhost:2001",
     credentials: true
 }));
 app.use(express.json());
 
 //for all get requests check if they are authorized
 const authMiddleware = (req, res, next)=>{
+    //splits bearer token_value from authorization header and gets token_value
     let token = req.headers.authorization.split(" ")[1];
     if(token){
         jwt.verify(token, process.env.JWT_SECRET, (err, decodedToken)=>{
@@ -97,11 +97,10 @@ app.route('/logout').all(authMiddleware).get((req, res)=>{
 //CRUD TODO Lists
 app.route('/lists/:id?').all(authMiddleware)
     .get((req, res)=>{
-        console.log("hi");
         //if parameter is not specified send all lists
         if(!req.params.id){
-            User.find({"username": req.query.username})
-            .populate("lists")
+            User.find({"username": req.query.username}, ["user_lists"])
+            .populate("user_lists")
             .then(data => {
                 console.log(data);
                 res.json(data);
@@ -124,13 +123,29 @@ app.route('/lists/:id?').all(authMiddleware)
         const newLst = new List({
             title: req.body.title
         });
-        newLst.save().then((data)=>{
+        newLst.save().then((list_data)=>{
             /* after the creation of the list
                update the user's array of lists
             */
-            User.findOne({"username": req.body.username}).lists.push(data._id).save(done);
-            res.status(201).json(data);
-        }).catch((err)=>{
+            User.findOneAndUpdate({"username": req.body.username},
+            {
+                "$push": {
+                    "user_lists": list_data._id
+                }
+            },
+            {
+                new: true
+            })
+            .then( user_data => {
+                console.log(user_data);
+                res.status(201).json(list_data);
+            })
+            .catch(err => {
+                console.error(err);
+                res.json({err});
+            })
+        })
+        .catch((err)=>{
             console.error(err);
             res.json({err});
         });
@@ -152,10 +167,10 @@ app.route('/lists/:id?').all(authMiddleware)
 app.route('/items/:id?').all(authMiddleware)
     .get((req, res)=>{
         if(!req.params.id){
-            List.findOne({_id: req.query.id})
-            .populate("items")
-            .then( data => {
-                res.json(data);
+            List.findOne({_id: req.query.id}, ["list_items"])
+            .populate("list_items")
+            .then( list_data => {
+                res.json(list_data);
             }).catch(err => console.error(err));
         }
         else{
@@ -169,10 +184,21 @@ app.route('/items/:id?').all(authMiddleware)
     })
     .post((req, res)=>{
         const newItem = new Item({body: req.body.body});
-        newItem.save().then((data)=>{
-            List.find({_id: req.body.id}).items.push(data._id);
-            List.save();
-            res.status(201).json(data);
+        newItem.save().then((item_data)=>{
+            List.findOneAndUpdate({_id: req.body.id}, {
+                $push: {
+                    "list_items": item_data._id
+                }
+            },
+            {
+                new: true
+            }).then(list_data => {
+                console.log(list_data);
+                res.status(201).json(item_data);
+            }).catch(err => {
+                console.error(err);
+                res.json(err);
+            });
         }).catch((err)=>{
             console.error(err);
             res.json({err});

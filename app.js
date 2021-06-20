@@ -102,7 +102,6 @@ app.route('/lists/:id?').all(authMiddleware)
             User.find({"username": req.query.username}, ["user_lists"])
             .populate("user_lists")
             .then(data => {
-                console.log(data);
                 res.json(data);
             }).catch(err=>console.error(err));
         }
@@ -157,10 +156,25 @@ app.route('/lists/:id?').all(authMiddleware)
         })).catch((err)=>{console.log(err)});
     })
     .delete((req, res)=>{
-        List.findOneAndDelete({_id: req.body.id})
-        .then((data)=>{
-            res.json(data);
-        }).catch((err)=>{console.log(err)});
+        List.findOne({_id: req.body.id})
+        .then(data => {
+            /*
+                document.deleteOne doesnot delete the document
+                so after it finishes deleting all the items
+                delete the item again 
+            */
+            data.deleteOne().then( () => {
+                //deletes the list
+                List.deleteOne({_id: req.body.id}).then(()=>{
+                    res.json(data);
+                });
+            })
+            .catch(err => {
+                console.error(err);
+            });
+            
+        })
+        .catch(err => console.error(err));
     });
 
 //CRUD TODO Items
@@ -207,6 +221,7 @@ app.route('/items/:id?').all(authMiddleware)
     .patch((req, res)=>{
         Item.findOneAndUpdate({_id:req.body.id}, req.body, {new: true})
         .then((data=>{
+            console.log(data);
             res.json(data);
         })).catch((err)=>{console.log(err)});
     })

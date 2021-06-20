@@ -74,6 +74,31 @@ UserSchema.statics.login = async function ({username, password}){
         throw Error("User not found");
     }
 }
+/* 
+    This is for a query(ie no need to fetch the document first and then delete it)
+
+*/
+ListSchema.pre('deleteOne', {document:true, query: false},function (req, res, next) {
+    //fetch all the id's of the list_items and join them _id1|_id2 in a string
+    //const all_items = this.getQuery()['list_items'];
+    console.log("this is pre----------");
+    console.log(this.list_items);
+
+    this.model("items").deleteMany(
+            {
+                _id: 
+                {
+                    //turn the string into regex
+                    //$regex : new RegExp(all_items)
+                    $in: this.list_items
+                }
+            })
+    .then((res)=>{
+        console.log(res);
+        next();
+    })
+    .catch(err => console.error(err));
+});
 
 module.exports = {
     User: mongoose.model('users', UserSchema),
